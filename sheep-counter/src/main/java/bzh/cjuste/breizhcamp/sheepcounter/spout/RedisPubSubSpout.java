@@ -19,9 +19,10 @@ import java.util.Map;
 import java.util.concurrent.LinkedBlockingQueue;
 
 /**
- * Created by Clement on 03/06/2015.
+ * Spout souscrivant au CHANNEL sur redis présent sur REDIS_URL.
+ * Envoie les messages reçus dans le champ "sheeps"
  */
-public class RedisPubSubSpout extends JedisPubSub implements IRichSpout{
+public class RedisPubSubSpout implements IRichSpout{
 
     private static final Logger LOGGER = LoggerFactory.getLogger(RedisPubSubSpout.class);
     public static final String REDIS_URL = "localhost";
@@ -51,7 +52,7 @@ public class RedisPubSubSpout extends JedisPubSub implements IRichSpout{
             @Override
             public void run() {
                 Jedis jedis = jedisPool.getResource();
-                jedis.subscribe(RedisPubSubSpout.this, CHANNEL);
+                jedis.subscribe(new SimpleJedisPubSub(), CHANNEL);
             }
         });
     }
@@ -61,16 +62,29 @@ public class RedisPubSubSpout extends JedisPubSub implements IRichSpout{
         jedisPool.close();
     }
 
+    /**
+     * Appelée à l'intialisation et lorsqu'on utilise la méthode activate du cluster/ou via l'interface.
+     * Démarre la souscription à Redis
+     */
     @Override
     public void activate() {
         subscribingThread.start();
+        LOGGER.info("Ready to receive messages !");
     }
 
+    /**
+     * Appelée lorsqu'on utilise la méthode deactivate du cluster/ou via l'interface.
+     * Arrête la souscription à Redis
+     */
     @Override
     public void deactivate() {
         subscribingThread.interrupt();
+        LOGGER.info("Stop receiving messages !");
     }
 
+    /**
+     * Envoie le prochain tuple à la suite de la topologie
+     */
     @Override
     public void nextTuple() {
         String message = queue.poll();
@@ -82,43 +96,54 @@ public class RedisPubSubSpout extends JedisPubSub implements IRichSpout{
         }
     }
 
+    /**
+     * Appelée quand un tuple a été validé par un bolt (via la méthode ack).
+     * @param o tuple validé
+     */
     @Override
     public void ack(Object o) {
     }
 
+    /**
+     * Appelée quand un tuple a été marqué comme un échec par un bolt.
+     * @param o tuple en échec
+     */
     @Override
     public void fail(Object o) {
         LOGGER.warn("Failure for the tuple {}", o);
     }
 
-    @Override
-    public void onMessage(String channel, String message) {
-        LOGGER.debug("Receiving the redis message {}", message);
-        this.queue.offer(message);
-    }
+    private class SimpleJedisPubSub extends JedisPubSub {
 
-    @Override
-    public void onPMessage(String pattern, String channel, String message) {
+        @Override
+        public void onMessage(String channel, String message) {
+            LOGGER.debug("Receiving the redis message {}", message);
+            RedisPubSubSpout.this.queue.offer(message);
+        }
 
-    }
+        @Override
+        public void onPMessage(String pattern, String channel, String message) {
 
-    @Override
-    public void onSubscribe(String channel, int subscribedChannels) {
+        }
 
-    }
+        @Override
+        public void onSubscribe(String channel, int subscribedChannels) {
 
-    @Override
-    public void onUnsubscribe(String channel, int subscribedChannels) {
+        }
 
-    }
+        @Override
+        public void onUnsubscribe(String channel, int subscribedChannels) {
 
-    @Override
-    public void onPUnsubscribe(String pattern, int subscribedChannels) {
+        }
 
-    }
+        @Override
+        public void onPUnsubscribe(String pattern, int subscribedChannels) {
 
-    @Override
-    public void onPSubscribe(String pattern, int subscribedChannels) {
+        }
 
+        @Override
+        public void onPSubscribe(String pattern, int subscribedChannels) {
+
+        }
     }
 }

@@ -15,7 +15,8 @@ import org.slf4j.LoggerFactory;
 import java.util.Map;
 
 /**
- * Created by Clement on 03/06/2015.
+ * Bolt pour trier les moutons reçus par couleur.
+ * Renvoie la couleur dans "color" et le nombre de moutons dans "number"
  */
 public class ColorSortingBolt extends BaseRichBolt {
 
@@ -32,7 +33,7 @@ public class ColorSortingBolt extends BaseRichBolt {
         try {
             if (tuple.contains("sheeps")) {
                 String sheepsString = tuple.getStringByField("sheeps");
-                System.out.println(sheepsString);
+                LOGGER.debug("Receiving the message {}", sheepsString);
                 JSONObject sheeps = JSONObject.fromObject(sheepsString);
                 if (sheeps.containsKey("color") && sheeps.containsKey("number")) {
                     String color = sheeps.getString("color");

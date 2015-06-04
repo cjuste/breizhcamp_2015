@@ -20,7 +20,7 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * Created by Clement on 03/06/2015.
+ * Bolt pour envoyer le nombre de moutons par couleur sur Redis dans la map REDIS_KEY
  */
 public class StoreBolt implements IRichBolt {
 
@@ -73,6 +73,9 @@ public class StoreBolt implements IRichBolt {
         jedisPool.returnResource(jedis);
     }
 
+    /**
+     * Appelée lorsque la topologie est killée
+     */
     @Override
     public void cleanup() {
         jedisPool.close();
@@ -86,6 +89,8 @@ public class StoreBolt implements IRichBolt {
     @Override
     public Map<String, Object> getComponentConfiguration() {
         Config conf = new Config();
+        //Déclare la mise en place d'un tuple de tick toutes les 30 secondes pour envoyer les données sur Redis à la
+        // réception de ce tick
         conf.put(Config.TOPOLOGY_TICK_TUPLE_FREQ_SECS, 30);
         return conf;
     }

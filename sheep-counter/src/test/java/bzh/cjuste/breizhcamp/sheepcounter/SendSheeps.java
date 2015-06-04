@@ -3,6 +3,8 @@ package bzh.cjuste.breizhcamp.sheepcounter;
 import bzh.cjuste.breizhcamp.sheepcounter.entity.Color;
 import bzh.cjuste.breizhcamp.sheepcounter.spout.RedisPubSubSpout;
 import net.sf.json.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPoolConfig;
@@ -14,11 +16,14 @@ import java.util.Map;
 import java.util.concurrent.*;
 
 /**
- * Created by Clement on 03/06/2015.
+ * Classe de test pour envoyer les données sur Redis.
+ * Envoie les données sur le redis spécifié en RedisPubSubSpout.REDIS_URL
  */
 public class SendSheeps {
 
-    public static final int MAX_VALUE=100;
+    private static final Logger LOGGER = LoggerFactory.getLogger(SendSheeps.class);
+    private static final int MAX_VALUE=10;
+    private static final int RETRIES=10000;
 
     public static void main(String[] args) {
         JedisPoolConfig config = new JedisPoolConfig();
@@ -43,19 +48,16 @@ public class SendSheeps {
                 } else {
                     result.put(sheeps.getColor(), sheeps.getNumber());
                 }
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            } catch (ExecutionException e) {
-                e.printStackTrace();
+            } catch (InterruptedException|ExecutionException e) {
+                LOGGER.warn("Unable to get all the futures", e);
             }
         }
-        executorPool.shutdownNow();
+        executorPool.shutdown();
 
-        System.out.println("finished");
-        System.out.println(result);
+        LOGGER.info("Finished sending the sheeps :\n", result);
     }
 
-    public static class SendSheepRunnable implements Callable<Sheeps> {
+    private static class SendSheepRunnable implements Callable<Sheeps> {
 
         private JedisPool jedisPool;
         private Sheeps sheeps;
@@ -67,13 +69,18 @@ public class SendSheeps {
             sheeps.setColor(Color.values()[colorIndex]);
         }
 
+        /**
+         * Envoie 1-MAX_VALUE * RETRIES moutons de la même couleur (choisie aléatoirement) sur Redis.
+         * @return le nombre et la couleur des moutons envoyés
+         * @throws Exception
+         */
         @Override
         public Sheeps call() throws Exception {
             Jedis jedis = jedisPool.getResource();
             JSONObject sheepsJson = new JSONObject();
             sheepsJson.put("color", sheeps.getColor().toString());
             int retries = 0;
-            while (retries <=10000) {
+            while (retries <=RETRIES) {
                 int numberSheeps = (int) (Math.floor(Math.random()*MAX_VALUE+1));
                 sheeps.setNumber(sheeps.getNumber() + numberSheeps);
                 sheepsJson.put("number", numberSheeps);
