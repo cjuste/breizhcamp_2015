@@ -54,7 +54,7 @@ public class SendSheeps {
         }
         executorPool.shutdown();
 
-        LOGGER.info("Finished sending the sheeps :\n", result);
+        LOGGER.info("Finished sending the sheeps :\n {}", result);
     }
 
     private static class SendSheepRunnable implements Callable<Sheeps> {

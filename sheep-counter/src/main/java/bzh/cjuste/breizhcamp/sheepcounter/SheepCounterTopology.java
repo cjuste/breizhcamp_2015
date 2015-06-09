@@ -9,7 +9,7 @@ import backtype.storm.topology.TopologyBuilder;
 import backtype.storm.tuple.Fields;
 import backtype.storm.utils.Utils;
 import bzh.cjuste.breizhcamp.sheepcounter.bolt.ColorSortingBolt;
-import bzh.cjuste.breizhcamp.sheepcounter.bolt.StoreBolt;
+import bzh.cjuste.breizhcamp.sheepcounter.bolt.CountBolt;
 import bzh.cjuste.breizhcamp.sheepcounter.spout.RedisPubSubSpout;
 
 /**
@@ -19,7 +19,7 @@ public class SheepCounterTopology {
 
     private static final String REDIS_SPOUT = "REDIS_SPOUT";
     private static final String SORT_BOLT = "SORT_BOLT";
-    private static final String STORE_BOLT = "STORE_BOLT";
+    private static final String COUNT_BOLT = "COUNT_BOLT";
     private static LocalCluster localCluster;
 
 
@@ -47,7 +47,7 @@ public class SheepCounterTopology {
 
         // init bolt
         builder.setBolt(SORT_BOLT, new ColorSortingBolt(), 5).shuffleGrouping(REDIS_SPOUT);
-        builder.setBolt(STORE_BOLT, new StoreBolt(), 5).fieldsGrouping(SORT_BOLT, new Fields("color"));
+        builder.setBolt(COUNT_BOLT, new CountBolt(), 5).fieldsGrouping(SORT_BOLT, new Fields("color"));
 
         Config conf = new Config();
         conf.setMaxSpoutPending(100);

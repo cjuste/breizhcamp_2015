@@ -2,8 +2,8 @@ package bzh.cjuste.breizhcamp.sheepcounter.spout;
 
 import backtype.storm.spout.SpoutOutputCollector;
 import backtype.storm.task.TopologyContext;
-import backtype.storm.topology.IRichSpout;
 import backtype.storm.topology.OutputFieldsDeclarer;
+import backtype.storm.topology.base.BaseRichSpout;
 import backtype.storm.tuple.Fields;
 import backtype.storm.tuple.Values;
 import backtype.storm.utils.Utils;
@@ -22,7 +22,7 @@ import java.util.concurrent.LinkedBlockingQueue;
  * Spout souscrivant au CHANNEL sur redis présent sur REDIS_URL.
  * Envoie les messages reçus dans le champ "sheeps"
  */
-public class RedisPubSubSpout implements IRichSpout{
+public class RedisPubSubSpout extends BaseRichSpout {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(RedisPubSubSpout.class);
     public static final String REDIS_URL = "localhost";
@@ -35,11 +35,6 @@ public class RedisPubSubSpout implements IRichSpout{
     @Override
     public void declareOutputFields(OutputFieldsDeclarer outputFieldsDeclarer) {
         outputFieldsDeclarer.declare(new Fields("sheeps"));
-    }
-
-    @Override
-    public Map<String, Object> getComponentConfiguration() {
-        return null;
     }
 
     @Override
@@ -94,23 +89,6 @@ public class RedisPubSubSpout implements IRichSpout{
             LOGGER.info("Sending the message {}", message);
             this.spoutOutputCollector.emit(new Values(message));
         }
-    }
-
-    /**
-     * Appelée quand un tuple a été validé par un bolt (via la méthode ack).
-     * @param o tuple validé
-     */
-    @Override
-    public void ack(Object o) {
-    }
-
-    /**
-     * Appelée quand un tuple a été marqué comme un échec par un bolt.
-     * @param o tuple en échec
-     */
-    @Override
-    public void fail(Object o) {
-        LOGGER.warn("Failure for the tuple {}", o);
     }
 
     private class SimpleJedisPubSub extends JedisPubSub {

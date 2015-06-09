@@ -22,9 +22,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 /**
  * Bolt pour envoyer le nombre de moutons par couleur sur Redis dans la map REDIS_KEY
  */
-public class StoreBolt implements IRichBolt {
+public class CountBolt implements IRichBolt {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(StoreBolt.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(CountBolt.class);
     private static final String REDIS_KEY = "sorted_sheeps";
 
     private Map<Color, AtomicInteger> sheepsByColor;
